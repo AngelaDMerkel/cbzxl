@@ -168,25 +168,28 @@ successful results. Use visualization mockups to agree a very clean, simple
 layout before implementation. Detailed conversion-policy controls and review
 actions will be defined through that design work.
 
-### Design rationale
+### Overview layout
 
-The overview is for briefly checking an unattended service. Every visible
-element must help establish progress, understand the last outcome, measure the
-library benefit, or decide whether intervention is needed.
+Use the existing UI's live-progress-first overview, blue accent, and lifetime
+statistics as visual references. This does not change the decision to write new
+application code from scratch.
 
-- Give current progress the strongest visual hierarchy. Use checked versus total
-  counts for extent, estimated time remaining for planning, and recent actual
-  progress for freshness. Do not present a polling heartbeat as work completed.
-- Treat the previous run as a compact result: outcome, completion time, amount
-  of work, and space saved. Keep it distinct from live progress.
-- Show library savings in relation to original and current sizes when those
-  totals are known and comparable. Keep archive count as context. Do not invent
-  unknown original sizes to populate a comparison.
-- Reserve an attention color for actionable exceptions. Normal activity should
-  remain visually quiet; archive names appear only after opening those exceptions.
-- Keep effort, mode details, and stop controls within the current run's details.
-  Offer a prominent start action when idle. Use rules, alignment, and type scale
-  to express hierarchy without filling the overview with interchangeable cards.
+- Show a single progress bar with a small time-remaining label.
+- Place a live, updating status line directly underneath. Include the current
+  processing stage and compact completed/total counts there. Do not show
+  successful archive names or oversized progress figures.
+- Place statistics immediately below progress. Start with the existing overview's
+  net savings, pages optimized, archives optimized, and items needing attention.
+  The attention count opens only the problem archives.
+- Keep the previous run's outcome as a quiet summary beneath the statistics,
+  rather than a separate bordered section.
+- Separate content with spacing. Avoid divider rules, bordered statistic cards,
+  repeated section headings, and decorative comparison bars on the overview.
+- Keep settings and detailed diagnostics behind deliberate actions. Display only
+  a compact stop/start control alongside run status.
+- Status must reflect actual worker activity; do not present a polling heartbeat
+  as progress. Report uncertainty when an ETA is not yet available. Preserve
+  truthful statistics rather than inventing unknown original sizes or outcomes.
 
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
