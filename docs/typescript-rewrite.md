@@ -21,6 +21,55 @@ of the new application.
   TypeScript types alone do not validate external data.
 - Select the JavaScript runtime, libraries, and frontend framework separately.
   The TypeScript decision does not mandate a particular framework.
+- Keep library discovery, job execution, conversion policies and codec adapters,
+  verification and safe replacement, persistence, HTTP handling, and UI rendering
+  in focused modules with explicit TypeScript interfaces. New features should
+  compose with these modules without requiring changes throughout the system.
+- Define conversion and history-protection rules once in the application logic.
+  Keep them independent of UI components and HTTP routes, and verify them with
+  newly written tests. Prefer direct composition and small interfaces.
+
+## Initial application features
+
+| Area | Required functionality |
+| --- | --- |
+| Libraries | Configure folders, discover CBZ files, and identify new or changed archives. |
+| Manual conversion | Process a selected archive or library through a bounded job queue. |
+| Progress | Show the current archive, completed and remaining work, failures, and space saved. |
+| Job controls | Start jobs, cancel safely, and recover cleanly after interruption. |
+| History | Show archive and page outcomes, actual conversion settings, sizes, and conversion provenance. |
+| Review | Surface failures, ambiguous conversion history, and imported items requiring re-review. |
+| Settings | Configure library locations, new conversion policies, encoder effort, and CPU and memory limits. |
+
+## Conversion requirements
+
+- Support JPEG, PNG, TIFF, and BMP pages inside CBZ archives from the initial
+  release. Convert eligible pages to JPEG XL.
+- Lossless conversion is always the default. Encoder effort is configurable and
+  must be respected during processing.
+- Preserve existing JPEG XL entries unchanged. Never submit already-JXL images
+  for conversion or re-encoding, regardless of the selected policy.
+- Support lossy conversion only through an explicitly selected policy. Record
+  the actual accepted quality settings for each page and enforce the permanent
+  history protections described below. Never switch to lossy conversion merely
+  because a lossless candidate does not save space.
+- Accept a converted page only if it is smaller than its source. Retain the
+  source page when conversion does not save space. Require the completed archive
+  to be smaller before an ordinary optimization replaces the source archive.
+- Verify decoded image content for lossless candidates, including correct
+  treatment of transparency, orientation, and colour information.
+- Preserve folder structure, unsupported image entries, and non-image files
+  such as ComicInfo.xml. Handle filename collisions explicitly.
+- Validate archive paths and resource limits, verify the rebuilt archive and
+  accepted image candidates, and recheck source identity before replacement.
+  Failed verification must never replace the source.
+- Use atomic replacement and recoverable database bookkeeping so interruption
+  does not leave archive contents and conversion history silently inconsistent.
+
+Automatic Smart quality selection, scheduling, advanced ZIP or image repairs,
+notifications, and third-party integrations are outside the initial application
+scope. Future features can be added through the modular boundaries above after
+their behavior is agreed.
 
 ## Migration data
 
@@ -81,8 +130,8 @@ applications stopped. It does not start the application or conversion worker.
    categories, validation results, uncertainties, and cleanup status.
 5. Remove the old source database only after the complete migration is committed,
    verified, and durably published with its report. Any failure before those
-   conditions are satisfied must preserve the source. Never replace a populated unrelated
-   destination or silently merge histories.
+   conditions are satisfied must preserve the source. Never replace a populated
+   unrelated destination or silently merge histories.
 6. Return an explicit success or failure status. Docker removes the container on
    exit through `docker compose run --rm`; the destination and report persist
    independently of container cleanup.
@@ -102,6 +151,12 @@ history, accepted versus rejected lossy attempts, mandatory re-review, path
 remapping, repeat runs, interruption, invalid sources, and source deletion only
 after verified success.
 
-The application's conversion policies, review workflow, scheduling behavior,
-API, and UI features will be confirmed separately. Existing functionality is
-inventory for that discussion, not an automatic requirement for the rewrite.
+## Interface design
+
+The next design step is visualization mockups of a very clean, simple interface
+for the agreed initial features. Establish the layout and interaction flows with
+the user before implementing the interface. Detailed conversion-policy controls
+and review actions will be defined through that design work.
+
+Existing functionality remains inventory for future discussion, not an automatic
+requirement for the rewrite.
