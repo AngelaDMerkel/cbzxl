@@ -191,5 +191,15 @@ application code from scratch.
   as progress. Report uncertainty when an ETA is not yet available. Preserve
   truthful statistics rather than inventing unknown original sizes or outcomes.
 
+The compact progress-and-statistics home layout is approved. Preserve that
+structure while refining the icon and the attention interaction. The icon should
+remain legible at small sizes and avoid the old mark's crowded compression arrows.
+
+The current attention proposal expands the problem archives beneath the
+statistics, keeping live progress visible. Show each problem and its protection
+status immediately, without navigating away or requiring a second expansion per
+archive. The count toggles the list; provide an explicit hide action and preserve
+keyboard focus. This presentation does not clear review or lossy-conversion blocks.
+
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
