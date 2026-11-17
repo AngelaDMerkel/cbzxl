@@ -168,5 +168,25 @@ successful results. Use visualization mockups to agree a very clean, simple
 layout before implementation. Detailed conversion-policy controls and review
 actions will be defined through that design work.
 
+### Design rationale
+
+The overview is for briefly checking an unattended service. Every visible
+element must help establish progress, understand the last outcome, measure the
+library benefit, or decide whether intervention is needed.
+
+- Give current progress the strongest visual hierarchy. Use checked versus total
+  counts for extent, estimated time remaining for planning, and recent actual
+  progress for freshness. Do not present a polling heartbeat as work completed.
+- Treat the previous run as a compact result: outcome, completion time, amount
+  of work, and space saved. Keep it distinct from live progress.
+- Show library savings in relation to original and current sizes when those
+  totals are known and comparable. Keep archive count as context. Do not invent
+  unknown original sizes to populate a comparison.
+- Reserve an attention color for actionable exceptions. Normal activity should
+  remain visually quiet; archive names appear only after opening those exceptions.
+- Keep effort, mode details, and stop controls within the current run's details.
+  Offer a prominent start action when idle. Use rules, alignment, and type scale
+  to express hierarchy without filling the overview with interchangeable cards.
+
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
