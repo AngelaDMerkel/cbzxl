@@ -37,7 +37,8 @@ of the new application.
 | Manual conversion | Process a selected archive or library through a bounded job queue. |
 | Progress | Show the current archive, completed and remaining work, failures, and space saved. |
 | Job controls | Start jobs, cancel safely, and recover cleanly after interruption. |
-| History | Show archive and page outcomes, actual conversion settings, sizes, and conversion provenance. |
+| Overview | Prioritize the current run, previous run, and core library statistics. |
+| History | Preserve archive and page outcomes, actual settings, sizes, and provenance. Present run summaries by default. |
 | Review | Surface failures, ambiguous conversion history, and imported items requiring re-review. |
 | Settings | Configure library locations, new conversion policies, encoder effort, and CPU and memory limits. |
 
@@ -153,10 +154,19 @@ after verified success.
 
 ## Interface design
 
-The next design step is visualization mockups of a very clean, simple interface
-for the agreed initial features. Establish the layout and interaction flows with
-the user before implementing the interface. Detailed conversion-policy controls
-and review actions will be defined through that design work.
+The primary screen must focus on the status of the current run, the status and
+results of the previous run, and core library statistics such as archive count,
+current size, and cumulative space savings.
+
+Successful individual archives do not belong on the primary screen. Surface
+archive-level information when automatic processing is unsuccessful or an item
+requires review. Keep detailed conversion history as durable internal state.
+
+Keep settings and problem-archive details behind deliberate actions. The default
+view should not present a conversion setup form, an archive browser, or a list of
+successful results. Use visualization mockups to agree a very clean, simple
+layout before implementation. Detailed conversion-policy controls and review
+actions will be defined through that design work.
 
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
