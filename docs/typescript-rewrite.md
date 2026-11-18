@@ -154,6 +154,9 @@ after verified success.
 
 ## Interface design
 
+Target desktop browsers only. A mobile interface and mobile-specific layouts are
+out of scope.
+
 The primary screen must focus on the status of the current run, the status and
 results of the previous run, and core library statistics such as archive count,
 current size, and cumulative space savings.
@@ -195,11 +198,14 @@ The compact progress-and-statistics home layout is approved. Preserve that
 structure while refining the icon and the attention interaction. The icon should
 remain legible at small sizes and avoid the old mark's crowded compression arrows.
 
-The current attention proposal expands the problem archives beneath the
-statistics, keeping live progress visible. Show each problem and its protection
-status immediately, without navigating away or requiring a second expansion per
-archive. The count toggles the list; provide an explicit hide action and preserve
-keyboard focus. This presentation does not clear review or lossy-conversion blocks.
+Do not use accordions for errors or other interface content. Unresolved errors
+accumulate across runs and remain accessible after the current run finishes.
+Show each problem and its protection status directly in a flat list.
+
+Compare three desktop access patterns before choosing one: an always-visible
+list below the overview, a separate side panel, and a dedicated attention page.
+Preserve the approved progress-and-statistics layout as the starting point for
+each. Error presentation never clears review or lossy-conversion blocks.
 
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
