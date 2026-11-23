@@ -196,19 +196,21 @@ application code from scratch.
   as progress. Report uncertainty when an ETA is not yet available. Preserve
   truthful statistics rather than inventing unknown original sizes or outcomes.
 
-The compact progress-and-statistics home layout is approved. Preserve that
-structure while refining the icon and the attention interaction. The icon should
-remain legible at small sizes and avoid the old mark's crowded compression arrows.
+The compact, centered progress-and-statistics home layout is approved. Preserve
+that structure. The icon should remain legible at small sizes and avoid the old
+mark's crowded compression arrows.
 
 Do not use accordions for errors or other interface content. Unresolved errors
 accumulate across runs and remain accessible after the current run finishes.
 Show each problem and its protection status directly in a flat list.
 
-The current comparison is between a centered breakout dialog and a dedicated
-attention page. Keep accumulated error records separate from the compact home
-view until requested. Center both alternatives within the page while retaining
-readable column alignment for the error records. Neither alternative uses
-accordions, and error presentation never clears review or lossy-conversion blocks.
+Use the selected centered breakout dialog for Needs attention. Open it from the
+attention count on the home page and show the accumulated errors and their
+protection states in a flat list, with readable column alignment. Keep the
+overview in place behind the dialog and preserve the run state while it is open.
+Closing the dialog restores focus to the attention count. Opening, viewing, or
+closing the dialog never clears errors, review requirements, or lossy-conversion
+blocks. Detailed review actions remain to be defined.
 
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
