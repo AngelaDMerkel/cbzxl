@@ -10,4 +10,10 @@ stack.env
 /target/
 .env
 .env.*
+!.env.example
+/node_modules/
+/dist/
+/data/
+/converted/
+/quarantine/
 /comics/
