@@ -29,11 +29,66 @@ of the new application.
   Keep them independent of UI components and HTTP routes, and verify them with
   newly written tests. Prefer direct composition and small interfaces.
 
+## Directory configuration
+
+Define the source, converted, and quarantine directories through `.env`:
+
+```dotenv
+SOURCE_DIR=/data/source
+# CONVERTED_DIR=/data/converted
+# QUARANTINE_DIR=/data/quarantine
+```
+
+The paths above are illustrative. `SOURCE_DIR` is the input library. The default
+is source-only operation: verified, smaller results replace their source archive
+in place, and unchanged archives stay where they are.
+
+Setting a non-empty `CONVERTED_DIR` automatically enables separate output routing.
+Setting a non-empty `QUARANTINE_DIR` independently enables quarantine routing.
+No additional enable flags are required. Omitted or blank optional directory
+values leave the corresponding behavior disabled. Validate configured paths;
+an invalid enabled path must not silently fall back to in-place processing.
+
+### Converted directory
+
+- Route only successfully optimized archives into `CONVERTED_DIR`, preserving
+  their relative folder structure.
+- Publish and verify the destination and durably record the conversion and new
+  location before removing the source archive. Recheck source identity before
+  removal. Recovery must handle interruption between these operations.
+- Valid archives needing no changes, including already-JXL archives and those
+  with no size benefit, remain in `SOURCE_DIR` unchanged.
+- If destination creation, verification, or history recording fails, retain the
+  source and surface the failure for attention. Do not overwrite unrelated
+  destination files.
+
+### Quarantine directory
+
+- Move only invalid or corrupt source archives into `QUARANTINE_DIR`. Preserve
+  their bytes, relative paths, original location, and reason for quarantine.
+- Publish and verify an unchanged copy at the quarantine destination and record
+  the move before removing the source, including across filesystems.
+- Encoder failures, rejected output candidates, temporary I/O failures, unstable
+  files, and uncertain conversion history do not themselves qualify a source
+  archive for quarantine. Retain those sources and report the applicable issue.
+- With quarantine disabled, invalid archives remain in the source and are listed
+  in Needs attention. Quarantining an archive does not resolve its issue or clear
+  any lossy-conversion protection.
+
+Exclude converted and quarantine destinations from fresh-source discovery. Keep
+archive identity, conversion history, and lossy-conversion protection attached to
+the archive across location changes. Prevent directory aliases or overlapping
+discovery paths from causing repeated ingestion or destructive routing. Library
+statistics must not double-count an archive during a recoverable transfer.
+Treat source and converted archives as one logical library for statistics and
+history. Track quarantine separately; moving a file there is not space saved by
+conversion. Recheck source identity before removing it during any transfer.
+
 ## Initial application features
 
 | Area | Required functionality |
 | --- | --- |
-| Libraries | Configure folders, discover CBZ files, and identify new or changed archives. |
+| Libraries | Configure source, optional converted, and optional quarantine directories through `.env`; discover CBZ files and identify new or changed archives. |
 | Manual conversion | Process a selected archive or library through a bounded job queue. |
 | Progress | Show the current processing stage, completed and remaining work, failures, and space saved. |
 | Job controls | Start jobs, cancel safely, and recover cleanly after interruption. |
