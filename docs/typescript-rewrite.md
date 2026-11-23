@@ -35,9 +35,10 @@ of the new application.
 | --- | --- |
 | Libraries | Configure folders, discover CBZ files, and identify new or changed archives. |
 | Manual conversion | Process a selected archive or library through a bounded job queue. |
-| Progress | Show the current archive, completed and remaining work, failures, and space saved. |
+| Progress | Show the current processing stage, completed and remaining work, failures, and space saved. |
 | Job controls | Start jobs, cancel safely, and recover cleanly after interruption. |
 | Overview | Prioritize the current run, previous run, and core library statistics. |
+| Library trends | Include at least two dated graphs: library size and cumulative savings together, plus the evolution of image formats in the library. |
 | History | Preserve archive and page outcomes, actual settings, sizes, and provenance. Present run summaries by default. |
 | Review | Surface failures, ambiguous conversion history, and imported items requiring re-review. |
 | Settings | Configure library locations, new conversion policies, encoder effort, and CPU and memory limits. |
@@ -83,6 +84,7 @@ markers: version numbers are not interchangeable between the families.
 | Libraries | Preserve names, folder paths, and enabled state. Support explicit path remapping. |
 | Archives | Preserve paths, conversion status, original and current sizes, recorded space savings, and available identity information. |
 | Conversion history | Preserve archive outcomes and per-page results where available, including the conversion settings needed to interpret past results. |
+| Historical library snapshots | Preserve authentic dated size, savings, and format-count measurements where available. Historical snapshots are retained history, not disposable caches. |
 | Lossy conversion protection | Preserve durable evidence of accepted lossy conversions and uncertainty. Protection must survive policy changes and history cleanup. |
 | Issues and reviews | Preserve errors, notes, and previous decisions as historical context. Every imported issue and review requires re-review, including previously dismissed or resolved items. |
 | Conversion policies | Start fresh. Historical settings remain evidence of past conversions, not active presets. |
@@ -188,6 +190,8 @@ application code from scratch.
   The attention count opens only the problem archives.
 - Keep the previous run's outcome as a quiet summary beneath the statistics,
   rather than a separate bordered section.
+- Include at least two library-trend graphs below the main statistics, aligned
+  with the centered layout and using spacing rather than bordered panels.
 - Separate content with spacing. Avoid divider rules, bordered statistic cards,
   repeated section headings, and decorative comparison bars on the overview.
 - Keep settings and detailed diagnostics behind deliberate actions. Display only
@@ -211,6 +215,32 @@ overview in place behind the dialog and preserve the run state while it is open.
 Closing the dialog restores focus to the attention count. Opening, viewing, or
 closing the dialog never clears errors, review requirements, or lossy-conversion
 blocks. Detailed review actions remain to be defined.
+
+### Library trends
+
+The initial two graphs are:
+
+1. Library size and cumulative net space saved together, as two lines on one
+   shared GB axis. Library size is the measured total in the indexed library;
+   changes can reflect additions, removals, and optimization. Savings are
+   attributable to accepted conversions. Count accepted changes once; repeated
+   scans, failed attempts, and discarded candidates must not add savings.
+   Preserve recorded reversals or corrections rather than forcing an increasing
+   savings curve.
+2. Image formats over time, using a line chart of image counts for JPEG XL,
+   JPEG, PNG, TIFF, BMP, and other preserved formats. Measure the actual stored
+   formats at each snapshot, including already-JXL pages. Keep historical
+   format composition distinct from cumulative conversion-attempt totals.
+
+Use a common date range, clearly labeled units, and hover inspection of recorded
+points. Preserve historical source snapshots during migration when their meaning
+is compatible. Reconstruct a point only when reliable records support it; never
+infer past whole-library sizes or format mixes from the current inventory.
+Current-only format inventory is not historical format data. Show gaps or an
+honest empty state when older history is unavailable, and begin recording new snapshots
+from the first reliable scan. Rebuilding cached totals does not discard this
+dated history. Record new snapshots after completed scans and runs so the graphs
+remain useful over time.
 
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
