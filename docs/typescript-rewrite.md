@@ -2,8 +2,8 @@
 
 CBZXL will be rewritten from scratch in TypeScript, with a compact backend,
 a lightweight TypeScript web UI, and SQLite. These requirements capture the
-decisions agreed on November 17, 2026. The existing Rust and Python applications
-remain references for understanding source database formats and identifying
+agreed decisions and current interface proposals. The existing Rust and Python
+applications remain references for understanding source database formats and identifying
 behavior to discuss; their implementation and architecture are not the basis
 of the new application.
 
@@ -178,6 +178,8 @@ statistics as visual references. This does not change the decision to write new
 application code from scratch.
 
 - Show a single progress bar with a small time-remaining label.
+- Center the overall page composition in a consistent content column. Center the
+  branding, run status, statistic labels and values, and previous-run summary.
 - Place a live, updating status line directly underneath. Include the current
   processing stage and compact completed/total counts there. Do not show
   successful archive names or oversized progress figures.
@@ -202,10 +204,11 @@ Do not use accordions for errors or other interface content. Unresolved errors
 accumulate across runs and remain accessible after the current run finishes.
 Show each problem and its protection status directly in a flat list.
 
-Compare three desktop access patterns before choosing one: an always-visible
-list below the overview, a separate side panel, and a dedicated attention page.
-Preserve the approved progress-and-statistics layout as the starting point for
-each. Error presentation never clears review or lossy-conversion blocks.
+The current comparison is between a centered breakout dialog and a dedicated
+attention page. Keep accumulated error records separate from the compact home
+view until requested. Center both alternatives within the page while retaining
+readable column alignment for the error records. Neither alternative uses
+accordions, and error presentation never clears review or lossy-conversion blocks.
 
 Existing functionality remains inventory for future discussion, not an automatic
 requirement for the rewrite.
