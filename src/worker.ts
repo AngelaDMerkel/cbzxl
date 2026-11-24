@@ -383,6 +383,16 @@ export class Worker {
     let workspace: string | undefined;
     try {
       if (
+        !archive.identity_json ||
+        !archive.fingerprint ||
+        !sameIdentity(JSON.parse(archive.identity_json), sourceIdentity) ||
+        archive.fingerprint !== sourceHash
+      )
+        throw new ArchiveError(
+          "changed",
+          "Archive changed after discovery; scan it again before processing",
+        );
+      if (
         Date.now() - Number(sourceIdentity.mtime) / 1e6 <
         this.config.stableSeconds * 1000
       )
@@ -613,6 +623,17 @@ export class Worker {
             }
           : page,
       );
+      if (kind === "changed") {
+        transaction(this.db, () => {
+          this.db
+            .prepare(
+              "UPDATE archives SET status='deferred',format_counts=NULL,updated_at=? WHERE id=?",
+            )
+            .run(now(), archive.id);
+          recordOutcome(this.db, outcome);
+        });
+        return;
+      }
       const update: ArchiveUpdate = {
         location: archive.location,
         status: outcome.outcome,

@@ -42,7 +42,7 @@ async function fixture(routing = false) {
     library = activeLibrary(db, config.source),
     worker = new Worker(db, config, tools);
   await worker.initialize();
-  async function book(name: string, image = true) {
+  async function book(name: string, image = true, gradient = "blue-white") {
     const path = join(config.source, name);
     await fs.mkdir(join(path, ".."), { recursive: true });
     const page = join(dir, "page.bmp");
@@ -50,7 +50,7 @@ async function fixture(routing = false) {
       execFileSync(tools.imagemagick, [
         "-size",
         "256x256",
-        "gradient:blue-white",
+        "gradient:" + gradient,
         "-depth",
         "8",
         page,
@@ -136,6 +136,83 @@ test("corrupt candidate output never quarantines a valid source", async (t) => {
     );
   } finally {
     failure.mock.restore();
+    await f.close();
+  }
+});
+
+test("a source changed after discovery is deferred and re-inherits its lossy protection", async () => {
+  const f = await fixture();
+  try {
+    await f.book("a-first.cbz");
+    const victim = await f.book("b-replaced.cbz", false);
+    const protectedSource = await f.book("c-protected.cbz", true, "red-white");
+    f.worker.tools = {
+      ...f.tools,
+      encoder: join(f.dir, "unavailable-encoder"),
+    };
+    await f.run();
+    const priorHash = await hashFile(victim),
+      protectedHash = await hashFile(protectedSource);
+    f.db
+      .prepare(
+        "UPDATE archives SET lossy_state='lossy' WHERE path='c-protected.cbz'",
+      )
+      .run();
+    const wrapper = join(f.dir, "replace-during-encoding.mjs"),
+      marker = join(f.dir, "replaced-once");
+    await fs.writeFile(
+      wrapper,
+      "#!" +
+        process.execPath +
+        "\n" +
+        "import{existsSync,copyFileSync,writeFileSync}from'node:fs';import{spawnSync}from'node:child_process';" +
+        "if(!existsSync(" +
+        JSON.stringify(marker) +
+        ")){copyFileSync(" +
+        JSON.stringify(protectedSource) +
+        "," +
+        JSON.stringify(victim) +
+        ");writeFileSync(" +
+        JSON.stringify(marker) +
+        ",'done');}" +
+        "const result=spawnSync(" +
+        JSON.stringify(f.tools.encoder) +
+        ",process.argv.slice(2),{stdio:'inherit'});process.exit(result.status??1);",
+      { mode: 0o700 },
+    );
+    f.worker.tools = { ...f.tools, encoder: wrapper };
+    await f.run("lossy", "all");
+    assert.equal(await hashFile(victim), protectedHash);
+    const deferred = f.db
+      .prepare(
+        "SELECT * FROM archives WHERE path='b-replaced.cbz' AND status<>'missing'",
+      )
+      .get()!;
+    assert.equal(deferred["status"], "deferred");
+    assert.equal(
+      deferred["fingerprint"],
+      priorHash,
+      "a stale archive record must not adopt the replacement's identity",
+    );
+    f.worker.tools = f.tools;
+    await f.run("lossy", "all");
+    const guarded = f.db
+      .prepare(
+        "SELECT * FROM archives WHERE path='b-replaced.cbz' AND status<>'missing'",
+      )
+      .get()!;
+    assert.equal(guarded["lossy_state"], "lossy");
+    assert.equal(guarded["status"], "blocked");
+    assert.equal(await hashFile(victim), protectedHash);
+    assert.equal(
+      f.db
+        .prepare(
+          "SELECT count(*) AS n FROM results WHERE path='b-replaced.cbz' AND outcome='optimized'",
+        )
+        .get()!["n"],
+      0,
+    );
+  } finally {
     await f.close();
   }
 });
