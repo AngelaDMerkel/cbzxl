@@ -643,7 +643,9 @@ export async function migrate(
           throw new Error(
             "Reconcile pending archive replacements with the old application before migration",
           );
+      let destinationIdentity: Identity;
       if (await exists(targetPath)) {
+        destinationIdentity = await identity(targetPath);
         const existing = new DatabaseSync(targetPath, {
           readOnly: true,
           timeout: 5000,
@@ -720,6 +722,7 @@ export async function migrate(
         }
         report.status = "prepared";
         await atomicJson(reportPath, report);
+        destinationIdentity = await identity(staging);
         await fs.link(staging, targetPath);
         await syncDirectory(dirname(targetPath));
         report.status = "published";
@@ -729,6 +732,13 @@ export async function migrate(
         return { ...report, status: "dry_run", sourceRemoved: false };
       }
       const publishedIdentity = await identity(targetPath);
+      if (
+        publishedIdentity.dev !== destinationIdentity.dev ||
+        publishedIdentity.ino !== destinationIdentity.ino
+      )
+        throw new Error(
+          "Published destination changed; source cleanup refused",
+        );
       target = new DatabaseSync(targetPath, { readOnly: true, timeout: 5000 });
       target.exec("PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT");
       verifyDatabase(target);

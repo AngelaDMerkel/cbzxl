@@ -161,6 +161,32 @@ test("a destination changed after publication cannot authorize source deletion",
   }
 });
 
+test("a replaced publication inode cannot authorize source cleanup even with identical bytes", async (t) => {
+  const f = await fixture();
+  legacy(f.source);
+  const original = await hashFile(f.source),
+    link = fs.link;
+  const publishedPath = join(await fs.realpath(f.dir), "new.db");
+  const failure = t.mock.method(
+    fs,
+    "link",
+    async (from: PathLike, to: PathLike) => {
+      await link(from, to);
+      if (String(to) === publishedPath) {
+        await fs.copyFile(to, publishedPath + ".replacement");
+        await fs.rename(publishedPath + ".replacement", to);
+      }
+    },
+  );
+  try {
+    await assert.rejects(migrate(f), /destination changed/i);
+    assert.equal(await hashFile(f.source), original);
+  } finally {
+    failure.mock.restore();
+    await fs.rm(f.dir, { recursive: true, force: true });
+  }
+});
+
 test("captured Python v3 schema and real Rust v5 schema remain valid migration inputs", async () => {
   for (const kind of ["python-v3", "rust-v5"]) {
     const f = await fixture(),
