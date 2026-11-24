@@ -11,6 +11,19 @@ must be writable so the migrator can obtain SQLite locks and remove the source
 after success. Include existing WAL and SHM sidecar files in the configuration
 mount; do not copy just the main database out of a running application.
 
+With Compose configured and the legacy database in `CONFIG_DIR`, run:
+
+```sh
+docker compose stop cbzxl
+docker compose run --rm --build migrate /config/old.sqlite3 --dry-run
+docker compose run --rm migrate /config/old.sqlite3
+docker compose up -d cbzxl
+```
+
+Inspect the dry-run report before the second command. The real migration removes
+the old database after verified success. A separate backup is needed if you want
+to be able to return to the old application.
+
 Build the migration image:
 
 ```sh
@@ -20,7 +33,7 @@ docker build -f Dockerfile.migrate -t cbzxl-migrate:local .
 With the old database in a local `data` directory, inspect the migration first:
 
 ```sh
-docker run --rm --user "$(id -u):$(id -g)" --mount "type=bind,src=$(pwd)/data,dst=/config" -e DB_PATH=/config/cbzxl.sqlite3 -e SOURCE_DIR=/library cbzxl-migrate:local /config/old.sqlite3 --dry-run
+docker run --rm --user "$(id -u):$(id -g)" --mount "type=bind,src=$(pwd)/data,dst=/config" -e DB_PATH=/config/cbzxl.sqlite3 -e SOURCE_DIR=/library/source cbzxl-migrate:local /config/old.sqlite3 --dry-run
 ```
 
 Remove `--dry-run` to perform the migration. The source and target must be
