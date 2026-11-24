@@ -264,13 +264,15 @@ export async function writeArchive(
       const options = {
         mtime: entry.mtime,
         mode: (entry.directory ? 0o040000 : 0o100000) | (entry.mode & 0o777),
-        compress: entry.compressed,
         fileComment: entry.comment,
       };
       if (entry.directory) zip.addEmptyDirectory(entry.name, options);
       else {
         if (!entry.path) throw new Error("Archive entry has no workspace file");
-        zip.addFile(entry.path, entry.name, options);
+        zip.addFile(entry.path, entry.name, {
+          ...options,
+          compress: entry.compressed,
+        });
       }
     }
     zip.end({ comment, forceZip64Format: false });

@@ -2,6 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
+import type { Readable } from "node:stream";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -17,6 +20,7 @@ import { exists, hashFile } from "../src/files.ts";
 import { recoverTransfers } from "../src/transfers.ts";
 import { Worker } from "../src/worker.ts";
 import yauzl from "yauzl";
+import yazl from "yazl";
 
 async function fixture(routing = false) {
   const dir = await fs.mkdtemp(join(tmpdir(), "cbzxl-worker-"));
@@ -212,6 +216,35 @@ test("a source changed after discovery is deferred and re-inherits its lossy pro
         .get()!["n"],
       0,
     );
+  } finally {
+    await f.close();
+  }
+});
+
+test("ordinary ZIP directory records survive a successful conversion", async () => {
+  const f = await fixture();
+  try {
+    const source = await f.book("directories.cbz"),
+      zip = new yazl.ZipFile();
+    const written = pipeline(
+      zip.outputStream as Readable,
+      createWriteStream(source),
+    );
+    const folderOptions = { mode: 0o40755, fileComment: "Folder comment" };
+    zip.addEmptyDirectory("folder", folderOptions);
+    zip.addFile(join(f.dir, "page.bmp"), "folder/01.bmp", { compress: false });
+    zip.end({ comment: "Archive comment", forceZip64Format: false });
+    await written;
+    assert.equal((await f.run())["optimized"], 1);
+    const converted = await readArchive(source, f.config);
+    assert.deepEqual(
+      converted.entries.map((entry) => entry.name),
+      ["folder", "folder/01.jxl"],
+    );
+    assert.equal(converted.entries[0]!.directory, true);
+    assert.equal(converted.entries[0]!.comment, "Folder comment");
+    assert.equal(converted.entries[0]!.mode & 0o777, 0o755);
+    assert.equal(converted.comment, "Archive comment");
   } finally {
     await f.close();
   }
