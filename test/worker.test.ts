@@ -16,6 +16,7 @@ import { activeLibrary, enqueue, totals } from "../src/library.ts";
 import { exists, hashFile } from "../src/files.ts";
 import { recoverTransfers } from "../src/transfers.ts";
 import { Worker } from "../src/worker.ts";
+import yauzl from "yauzl";
 
 async function fixture(routing = false) {
   const dir = await fs.mkdtemp(join(tmpdir(), "cbzxl-worker-"));
@@ -107,6 +108,37 @@ async function fixture(routing = false) {
     },
   };
 }
+
+test("corrupt candidate output never quarantines a valid source", async (t) => {
+  const f = await fixture(true);
+  const originalOpen = yauzl.openPromise;
+  const failure = t.mock.method(
+    yauzl,
+    "openPromise",
+    async (path: string, options?: Parameters<typeof yauzl.openPromise>[1]) => {
+      if (path.endsWith("/candidate.cbz"))
+        await fs.writeFile(path, "corrupt generated candidate");
+      return originalOpen(path, options);
+    },
+  );
+  try {
+    const source = await f.book("valid.cbz"),
+      original = await hashFile(source);
+    const run = await f.run();
+    assert.equal(run["failed"], 1);
+    assert.equal(run["bytes_saved"], 0);
+    assert.equal(await hashFile(source), original);
+    assert.equal(await exists(join(f.config.quarantine!, "valid.cbz")), false);
+    assert.equal(await exists(join(f.config.converted!, "valid.cbz")), false);
+    assert.equal(
+      f.db.prepare("SELECT kind FROM issues").get()!["kind"],
+      "verification_failed",
+    );
+  } finally {
+    failure.mock.restore();
+    await f.close();
+  }
+});
 
 test("in-place conversion is verified, counted once, and preserves page history", async () => {
   const f = await fixture();

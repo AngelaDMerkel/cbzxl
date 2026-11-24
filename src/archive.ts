@@ -288,7 +288,18 @@ export async function verifyArchive(
   config: Config,
   signal?: AbortSignal,
 ): Promise<ArchiveContents> {
-  const actual = await readArchive(path, config, signal);
+  let actual: ArchiveContents;
+  try {
+    actual = await readArchive(path, config, signal);
+  } catch (error) {
+    if (error instanceof ArchiveError && error.kind === "invalid") {
+      throw new ArchiveError(
+        "verification",
+        "Rebuilt archive is invalid: " + error.message,
+      );
+    }
+    throw error;
+  }
   if (actual.entries.length !== expected.length)
     throw new ArchiveError(
       "verification",
