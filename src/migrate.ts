@@ -168,6 +168,10 @@ function importRecords(source: DatabaseSync, target: DatabaseSync, kind: Kind, t
   for(const table of ['libraries','archives','runs','results','pages','issues','snapshots']){
     report.counts[table]=Number(target.prepare('SELECT count(*) AS count FROM '+table).get()!['count']);
   }
+  for(const library of libraryRoots.keys()){
+    const savings=target.prepare('SELECT coalesce(sum(baseline_size-size),0) AS saved FROM archives WHERE library_id=? AND baseline_size IS NOT NULL AND size IS NOT NULL').get(library)!['saved'];
+    insert(target,'meta',{key:'imported_savings:'+library,value:json(Number(savings))});
+  }
   for(const [sourceTable,targetTable] of [[archiveTable,'archives'],[jobTable,'runs'],[outcomeTable,'results'],[pageTable,'pages'],[snapshotTable,'snapshots']]){
     const expected=tables.has(sourceTable!)?Number(source.prepare('SELECT count(*) AS count FROM '+sourceTable).get()!['count']):0;
     if(report.counts[targetTable!]!==expected) throw new Error('History count mismatch for '+sourceTable);

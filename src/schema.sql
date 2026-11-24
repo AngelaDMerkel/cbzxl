@@ -10,7 +10,7 @@ CREATE TABLE archives(
  id TEXT PRIMARY KEY, library_id TEXT NOT NULL REFERENCES libraries(id),
  path TEXT NOT NULL, location TEXT NOT NULL DEFAULT 'source',
  status TEXT NOT NULL DEFAULT 'new', baseline_size INTEGER, size INTEGER,
- fingerprint TEXT, mtime_ms REAL, lossy_state TEXT NOT NULL DEFAULT 'unknown',
+ fingerprint TEXT, identity_json TEXT, mtime_ms REAL, lossy_state TEXT NOT NULL DEFAULT 'unknown',
  converted_pages INTEGER NOT NULL DEFAULT 0, format_counts TEXT,
  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, legacy_json TEXT NOT NULL DEFAULT '{}',
  CHECK(location IN ('source','converted','quarantine')),
@@ -19,7 +19,7 @@ CREATE TABLE archives(
 CREATE TABLE runs(
  id TEXT PRIMARY KEY, library_id TEXT REFERENCES libraries(id),
  source TEXT NOT NULL, status TEXT NOT NULL, policy_json TEXT NOT NULL,
- scope TEXT NOT NULL DEFAULT 'changed', only_path TEXT,
+ scope TEXT NOT NULL DEFAULT 'changed', archive_id TEXT REFERENCES archives(id),
  queued_at TEXT NOT NULL, started_at TEXT, finished_at TEXT,
  found INTEGER NOT NULL DEFAULT 0, checked INTEGER NOT NULL DEFAULT 0,
  optimized INTEGER NOT NULL DEFAULT 0, unchanged INTEGER NOT NULL DEFAULT 0,
