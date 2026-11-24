@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream } from 'node:fs';
+import { constants } from 'node:fs';
 import { lstat, mkdir, open, realpath, rename, rm, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { contains } from './config.ts';
@@ -17,7 +17,9 @@ export function sameIdentity(a: Identity, b: Identity): boolean {
 }
 export async function hashFile(path: string, signal?: AbortSignal): Promise<string> {
   const hash = createHash('sha256');
-  for await (const chunk of createReadStream(path, { signal })) hash.update(chunk);
+  const handle = await open(path, constants.O_RDONLY|constants.O_NOFOLLOW);
+  try { for await (const chunk of handle.createReadStream({signal})) hash.update(chunk); }
+  finally { await handle.close(); }
   return hash.digest('hex');
 }
 export async function syncDirectory(path: string): Promise<void> {
@@ -53,6 +55,7 @@ export function relativePath(value: string): string {
 export async function safePath(root: string, relative: string, createParents = false): Promise<string> {
   const parts = relativePath(relative).split('/');
   let current = await realpath(root);
+  if(current!==resolve(root)) throw new Error('Configured directory changed through a symbolic link');
   for (const part of parts.slice(0,-1)) {
     current = join(current, part);
     try {

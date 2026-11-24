@@ -3,7 +3,9 @@
   "version": "6.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.22.3 <25" },
+  "engines": {
+    "node": ">=24.22.3 <25"
+  },
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "check": "tsc --noEmit",
@@ -14,10 +16,13 @@
     "dev": "node --watch --env-file-if-exists=.env src/cli.ts run",
     "migrate": "node --env-file-if-exists=.env src/migration-cli.ts"
   },
-  "dependencies": { "yauzl": "3.4.0", "yazl": "3.3.1" },
+  "dependencies": {
+    "yauzl": "3.4.0",
+    "yazl": "3.3.1"
+  },
   "devDependencies": {
     "@types/node": "24.19.2",
-    "@types/yauzl": "^2.10.3",
+    "@types/yauzl": "^3.4.0",
     "@types/yazl": "^3.3.0",
     "esbuild": "0.28.2",
     "typescript": "7.0.2"
