@@ -129,6 +129,38 @@ test("recovery completes a receipt interrupted after the old database was remove
   }
 });
 
+test("a destination changed after publication cannot authorize source deletion", async (t) => {
+  const f = await fixture();
+  legacy(f.source);
+  const original = await hashFile(f.source),
+    link = fs.link;
+  const publishedPath = join(await fs.realpath(f.dir), "new.db");
+  const failure = t.mock.method(
+    fs,
+    "link",
+    async (from: PathLike, to: PathLike) => {
+      await link(from, to);
+      if (String(to) === publishedPath) {
+        const published = new DatabaseSync(f.target);
+        published.exec("UPDATE archives SET size=size+1");
+        published.close();
+      }
+    },
+  );
+  try {
+    await assert.rejects(migrate(f), /destination changed/i);
+    assert.equal(await hashFile(f.source), original);
+    await fs.stat(f.target);
+    const report = JSON.parse(
+      await fs.readFile(f.target + ".migration.json", "utf8"),
+    );
+    assert.equal(report.sourceRemoved, false);
+  } finally {
+    failure.mock.restore();
+    await fs.rm(f.dir, { recursive: true, force: true });
+  }
+});
+
 test("captured Python v3 schema and real Rust v5 schema remain valid migration inputs", async () => {
   for (const kind of ["python-v3", "rust-v5"]) {
     const f = await fixture(),

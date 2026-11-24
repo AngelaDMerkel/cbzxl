@@ -728,9 +728,26 @@ export async function migrate(
       if (options.dryRun) {
         return { ...report, status: "dry_run", sourceRemoved: false };
       }
+      const publishedIdentity = await identity(targetPath);
+      target = new DatabaseSync(targetPath, { readOnly: true, timeout: 5000 });
+      target.exec("PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT");
+      verifyDatabase(target);
+      if (
+        !target
+          .prepare("SELECT 1 FROM imports WHERE digest=?")
+          .get(report.sourceDigest) ||
+        (await hashFile(targetPath)) !== report.targetDigest
+      )
+        throw new Error(
+          "Published destination changed; source cleanup refused",
+        );
       for (const [path, before] of protectedFiles)
         if (!sameIdentity(before, await identity(path)))
           throw new Error("Source changed during migration; cleanup refused");
+      if (!sameIdentity(publishedIdentity, await identity(targetPath)))
+        throw new Error(
+          "Published destination changed; source cleanup refused",
+        );
       await fs.unlink(sourcePath);
       report.sourceRemoved = true;
       source.close();
