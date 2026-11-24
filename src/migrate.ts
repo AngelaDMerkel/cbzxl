@@ -129,10 +129,13 @@ function importRecords(source: DatabaseSync, target: DatabaseSync, kind: Kind, t
   }
   const outcomeTable=kind==='rust-v5'?'job_archive_outcomes':'archive_results';
   for (const row of sourceRows(source,tables,outcomeTable)) {
-    const library=text(row['library_id'],primary);
-    const path=importedPath(row['path'],libraryRoots.get(library) ?? options.sourceRoot);
     const run=text(row['job_id'] ?? row['run_id']);
-    const archive=archives.get(text(row['archive_id'])) ?? byPath.get(library+'\0'+path);
+    const archiveId=archives.get(text(row['archive_id']));
+    const knownArchive=archiveId?target.prepare('SELECT library_id FROM archives WHERE id=?').get(archiveId):undefined;
+    const knownRun=runIds.has(run)?target.prepare('SELECT library_id FROM runs WHERE id=?').get(run):undefined;
+    const library=text(row['library_id']??knownArchive?.['library_id']??knownRun?.['library_id'],primary);
+    const path=importedPath(row['path'],libraryRoots.get(library) ?? options.sourceRoot);
+    const archive=archiveId ?? byPath.get(library+'\0'+path);
     const id=insert(target,'results',{run_id:runIds.has(run)?run:null,archive_id:archive??null,path,
       outcome:text(row['outcome'] ?? row['status'],'unknown'),mode:row['mode']===undefined&&row['conversion_mode']===undefined?null:text(row['mode']??row['conversion_mode']),
       source_size:number(row['source_size']??row['original_size']),final_size:number(row['final_size']),
@@ -145,12 +148,12 @@ function importRecords(source: DatabaseSync, target: DatabaseSync, kind: Kind, t
     const sourceArchive=archives.get(text(row['archive_id']));
     const matched=sourceArchive ? target.prepare('SELECT id FROM results WHERE run_id=? AND archive_id=? ORDER BY id DESC LIMIT 1').get(text(row['job_id']),sourceArchive) : undefined;
     const result=kind==='rust-v5'?resultIds.get(text(row['job_outcome_id'])):matched?Number(matched['id']):resultByRunPath.get(text(row['job_id'])+'\0'+text(row['path']).replaceAll('\\','/'));
-    const resultRow=result?target.prepare('SELECT archive_id FROM results WHERE id=?').get(result):undefined;
+    const resultRow=result?target.prepare('SELECT archive_id,outcome FROM results WHERE id=?').get(result):undefined;
     const archive=archives.get(text(row['archive_id'])) ?? (resultRow?.['archive_id'] as string|undefined);
     insert(target,'pages',{result_id:result??null,archive_id:archive??null,entry_path:entry,source_format:row['source_format']===undefined?null:text(row['source_format']),
       outcome:text(row['outcome'],'unknown'),mode:row['mode']===undefined?null:text(row['mode']),distance:number(row['distance']),effort:number(row['effort']),
       source_size:number(row['source_size']),final_size:number(row['final_size']),created_at:date(row['created_at']),details_json:json(row)});
-    if(archive && acceptedLossy(row)) target.prepare("UPDATE archives SET lossy_state='lossy' WHERE id=?").run(archive);
+    if(archive && acceptedLossy(row) && (!resultRow||['processed','converted','optimized'].includes(text(resultRow['outcome']).toLowerCase()))) target.prepare("UPDATE archives SET lossy_state='lossy' WHERE id=?").run(archive);
   }
   for(const table of [kind==='rust-v5'?'issues':'archive_issues','review_actions']) for(const row of sourceRows(source,tables,table)){
     const archive=archives.get(text(row['archive_id']));
@@ -194,11 +197,22 @@ export async function migrate(options: MigrationOptions): Promise<MigrationRepor
   if(!await exists(sourcePath)){
     if(await exists(reportPath)&&await exists(targetPath)){
       const receipt=JSON.parse(await readFile(reportPath,'utf8')) as MigrationReport;
-      if(receipt.source===sourcePath&&receipt.status==='completed'&&receipt.sourceRemoved){
+      if(receipt.source===sourcePath&&receipt.target===targetPath&&['prepared','published','completed'].includes(receipt.status)){
+        if(receipt.sourceRoot!==resolve(options.sourceRoot)||json(receipt.mappings)!==json(Object.fromEntries(Object.entries(options.maps??{}).sort(([a],[b])=>a.localeCompare(b)))))throw new Error('Migration mappings changed; recovery refused');
+        const release=lockDatabasePath(targetPath);
+        try{
         const existing=new DatabaseSync(targetPath,{readOnly:true,timeout:5000});
         try{verifyDatabase(existing);if(!existing.prepare('SELECT 1 FROM imports WHERE digest=?').get(receipt.sourceDigest))throw new Error('Migration receipt does not match destination');}
         finally{existing.close();}
+        if(receipt.status!=='completed'){
+          if(receipt.targetDigest!==await hashFile(targetPath))throw new Error('Destination changed before migration cleanup completed');
+          if(options.dryRun)return {...receipt,status:'dry_run',sourceRemoved:true};
+          receipt.status='completed';receipt.sourceRemoved=true;receipt.finishedAt=now();
+          for(const suffix of ['-wal','-shm'])if(await exists(sourcePath+suffix))receipt.warnings.push('Source is removed; an unverified residual sidecar was retained: '+sourcePath+suffix);
+          await atomicJson(reportPath,receipt);
+        }
         return receipt;
+        }finally{release();}
       }
     }
     throw new Error('Source database not found: '+sourcePath);

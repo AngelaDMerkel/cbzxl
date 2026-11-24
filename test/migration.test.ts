@@ -69,6 +69,36 @@ test('published destination survives a cleanup failure and retry does not duplic
   } finally {failure.mock.restore();await fs.rm(f.dir,{recursive:true,force:true});}
 });
 
+test('recovery completes a receipt interrupted after the old database was removed',async t=>{
+  const f=await fixture();legacy(f.source);
+  const unlink=fs.unlink;
+  const failure=t.mock.method(fs,'unlink',async(path:PathLike)=>{await unlink(path);if(String(path)===f.source)throw new Error('interrupted after removal');});
+  try{
+    await assert.rejects(migrate(f),/interrupted after removal/);await assert.rejects(fs.stat(f.source));
+    failure.mock.restore();
+    const receipt=await migrate(f);assert.equal(receipt.status,'completed');assert.equal(receipt.sourceRemoved,true);
+    assert.equal((await migrate(f)).status,'completed');
+  }finally{failure.mock.restore();await fs.rm(f.dir,{recursive:true,force:true});}
+});
+
+test('captured Python v3 schema and real Rust v5 schema remain valid migration inputs',async()=>{
+  for(const kind of ['python-v3','rust-v5']){
+    const f=await fixture(),db=new DatabaseSync(f.source);
+    try{
+      db.exec(await fs.readFile(new URL('./fixtures/'+kind+'.sql',import.meta.url),'utf8'));
+      if(kind==='rust-v5')db.exec("INSERT INTO schema_migrations VALUES(3,'2026-01-01T00:00:00Z');INSERT INTO libraries(id,name,root_path,created_at,updated_at) VALUES('lib','Comics','/old','2026-01-01','2026-01-01')");
+      db.close();
+      const report=await migrate(f);assert.equal(report.sourceKind,kind);assert.equal(report.counts.libraries,1);
+      const target=new DatabaseSync(f.target,{readOnly:true});verifyDatabase(target);
+      if(kind==='python-v3'){
+        assert.equal(target.prepare('SELECT count(*) AS n FROM pages WHERE result_id IS NOT NULL').get()!['n'],1);
+        assert.equal(target.prepare('SELECT current_bytes FROM snapshots').get()!['current_bytes'],700);
+      }
+      target.close();
+    }finally{try{db.close();}catch{}await fs.rm(f.dir,{recursive:true,force:true});}
+  }
+});
+
 test('interruption immediately after publication retains a durable receipt for recovery', async t => {
   const f=await fixture();legacy(f.source);
   const link=fs.link;
