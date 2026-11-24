@@ -1,34 +1,125 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="A quieter, smaller comic library."><title>CBZXL</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/app.css"><script type="module" src="/app.js"></script></head>
-<body>
-<div class="content">
- <header class="header">
-  <div class="identity"><h1><svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 8c-3-3-7-3-12-2v19c5-1 9-1 12 2 3-3 7-3 12-2V6c-5-1-9-1-12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 8v19" stroke="currentColor" stroke-width="2"/></svg>CBZXL</h1><span id="library-name" class="muted">Comics</span></div>
-  <button id="settings-button" class="settings-button quiet">Settings</button>
- </header>
- <main>
-  <section id="overview" aria-label="Library overview">
-   <div class="summary">
-    <section aria-label="Current run"><span id="eta" class="eta muted">Connecting</span><progress id="progress" max="100" value="0" aria-label="Archives processed"></progress><div class="status-row"><p role="status" aria-live="polite"><span id="stage">Loading library</span><span id="run-count" class="muted"></span></p><button id="run-button" class="quiet" disabled>Start</button></div></section>
-    <section class="stats" aria-label="Library statistics">
-     <div><span class="label">Net savings</span><strong id="saved" class="value">—</strong></div>
-     <div><span class="label">Pages optimized</span><strong id="pages" class="value">—</strong></div>
-     <div><span class="label">Archives optimized</span><strong id="archives" class="value">—</strong><span id="archive-count" class="context"></span></div>
-     <button id="attention-button" class="attention" aria-haspopup="dialog"><span class="label">Needs attention</span><strong id="attention" class="value">—</strong></button>
-    </section>
-    <button id="previous" class="previous quiet" aria-haspopup="dialog">No previous runs</button>
-   </div>
-   <section class="trends" aria-label="Library trends">
-    <section><h2>Library size &amp; space saved</h2><div id="size-chart" class="chart"></div></section>
-    <section><h2>Image formats over time</h2><div id="format-chart" class="chart"></div></section>
-   </section>
-   <label class="range-label">History <select id="range" aria-label="History date range"><option value="30">Last 30 days</option><option value="90" selected>Last 90 days</option><option value="365">Last year</option><option value="3650">Last 10 years</option></select></label>
-  </section>
-  <section id="settings" hidden aria-labelledby="settings-title"></section>
- </main>
- <p id="notice" class="notice" role="alert" hidden></p>
-</div>
-<dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-header"><h2 id="dialog-title"></h2><button id="close-dialog" class="close quiet" aria-label="Close dialog">×</button></div><div id="dialog-content"></div><p id="dialog-notice" class="notice" role="alert" hidden></p></dialog>
-<noscript>Enable JavaScript to use CBZXL.</noscript>
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="A quieter, smaller comic library." />
+    <title>CBZXL</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/app.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div class="content">
+      <header class="header">
+        <div class="identity">
+          <h1>
+            <svg
+              class="mark"
+              viewBox="0 0 32 32"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M16 8c-3-3-7-3-12-2v19c5-1 9-1 12 2 3-3 7-3 12-2V6c-5-1-9-1-12 2Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linejoin="round"
+              />
+              <path d="M16 8v19" stroke="currentColor" stroke-width="2" /></svg
+            >CBZXL
+          </h1>
+          <span id="library-name" class="muted">Comics</span>
+        </div>
+        <button id="settings-button" class="settings-button quiet">
+          Settings
+        </button>
+      </header>
+      <main>
+        <section id="overview" aria-label="Library overview">
+          <div class="summary">
+            <section aria-label="Current run">
+              <span id="eta" class="eta muted">Connecting</span
+              ><progress
+                id="progress"
+                max="100"
+                value="0"
+                aria-label="Archives processed"
+              ></progress>
+              <div class="status-row">
+                <p role="status" aria-live="polite">
+                  <span id="stage">Loading library</span
+                  ><span id="run-count" class="muted"></span>
+                </p>
+                <button id="run-button" class="quiet" disabled>Start</button>
+              </div>
+            </section>
+            <section class="stats" aria-label="Library statistics">
+              <div>
+                <span class="label">Net savings</span
+                ><strong id="saved" class="value">—</strong>
+              </div>
+              <div>
+                <span class="label">Pages optimized</span
+                ><strong id="pages" class="value">—</strong>
+              </div>
+              <div>
+                <span class="label">Archives optimized</span
+                ><strong id="archives" class="value">—</strong
+                ><span id="archive-count" class="context"></span>
+              </div>
+              <button
+                id="attention-button"
+                class="attention"
+                aria-haspopup="dialog"
+              >
+                <span class="label">Needs attention</span
+                ><strong id="attention" class="value">—</strong>
+              </button>
+            </section>
+            <button id="previous" class="previous quiet" aria-haspopup="dialog">
+              No previous runs
+            </button>
+          </div>
+          <section class="trends" aria-label="Library trends">
+            <section>
+              <h2>Library size &amp; space saved</h2>
+              <div id="size-chart" class="chart"></div>
+            </section>
+            <section>
+              <h2>Image formats over time</h2>
+              <div id="format-chart" class="chart"></div>
+            </section>
+          </section>
+          <label class="range-label"
+            >History
+            <select id="range" aria-label="History date range">
+              <option value="30">Last 30 days</option>
+              <option value="90" selected>Last 90 days</option>
+              <option value="365">Last year</option>
+              <option value="3650">Last 10 years</option>
+            </select></label
+          >
+        </section>
+        <section
+          id="settings"
+          hidden
+          aria-labelledby="settings-title"
+        ></section>
+      </main>
+      <p id="notice" class="notice" role="alert" hidden></p>
+    </div>
+    <dialog id="dialog" aria-labelledby="dialog-title">
+      <div class="dialog-header">
+        <h2 id="dialog-title"></h2>
+        <button id="close-dialog" class="close quiet" aria-label="Close dialog">
+          ×
+        </button>
+      </div>
+      <div id="dialog-content"></div>
+      <p id="dialog-notice" class="notice" role="alert" hidden></p>
+    </dialog>
+    <noscript>Enable JavaScript to use CBZXL.</noscript>
+  </body>
+</html>
