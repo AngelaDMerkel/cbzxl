@@ -11,3 +11,10 @@ stack.env
 .env
 .env.*
 comics
+node_modules
+dist
+data
+converted
+quarantine
+.local
+test

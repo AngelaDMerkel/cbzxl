@@ -13,7 +13,6 @@ CREATE TABLE archives(
  fingerprint TEXT, mtime_ms REAL, lossy_state TEXT NOT NULL DEFAULT 'unknown',
  converted_pages INTEGER NOT NULL DEFAULT 0, format_counts TEXT,
  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, legacy_json TEXT NOT NULL DEFAULT '{}',
- UNIQUE(library_id,path),
  CHECK(location IN ('source','converted','quarantine')),
  CHECK(lossy_state IN ('unprocessed','lossless','lossy','unknown'))
 ) STRICT;
@@ -66,9 +65,11 @@ CREATE TABLE imports(
  imported_at TEXT NOT NULL, report_json TEXT NOT NULL
 ) STRICT;
 CREATE INDEX archive_location ON archives(library_id,location,status);
+CREATE UNIQUE INDEX archive_active_path ON archives(library_id,location,path) WHERE status <> 'missing';
 CREATE INDEX archive_fingerprint ON archives(fingerprint);
 CREATE INDEX run_queue ON runs(status,queued_at);
 CREATE INDEX results_history ON results(archive_id,created_at);
+CREATE INDEX results_run ON results(run_id,archive_id);
 CREATE INDEX page_archive ON pages(archive_id);
 CREATE INDEX issue_attention ON issues(state,updated_at);
 CREATE INDEX snapshot_date ON snapshots(library_id,recorded_at);

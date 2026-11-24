@@ -8,10 +8,11 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "node --test test/*.test.ts",
+    "test:migration-container": "node test/migration-container.ts",
     "build": "node scripts/build.ts",
     "start": "node --env-file-if-exists=.env src/cli.ts run",
     "dev": "node --watch --env-file-if-exists=.env src/cli.ts run",
-    "migrate": "node --env-file-if-exists=.env src/cli.ts migrate"
+    "migrate": "node --env-file-if-exists=.env src/migration-cli.ts"
   },
   "dependencies": { "yauzl": "3.4.0", "yazl": "3.3.1" },
   "devDependencies": {

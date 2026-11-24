@@ -8,6 +8,21 @@ export const now = () => new Date().toISOString();
 export const json = (value: unknown) => JSON.stringify(value, (_key, item) => typeof item === 'bigint' ? item.toString() : item);
 export const SCHEMA_ID = 1128421942;
 
+export function lockDatabasePath(path: string): () => void {
+  mkdirSync(dirname(path), {recursive:true});
+  const gate = new DatabaseSync(path + '.lock.sqlite3', {timeout:1000});
+  try {
+    const id = Number(gate.prepare('PRAGMA application_id').get()!['application_id']);
+    const tables = gate.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+    if ((id !== 0 && id !== SCHEMA_ID + 1) || (id === 0 && tables.length)) throw new Error('Unrelated file occupies the database lock path');
+    gate.exec('PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; CREATE TABLE IF NOT EXISTS gate(id INTEGER); PRAGMA application_id=1128421943; COMMIT;');
+    return () => gate.close();
+  } catch (error) {
+    gate.close();
+    throw new Error('Database is in use or its lock cannot be acquired', {cause:error});
+  }
+}
+
 export function openDatabase(path: string): DatabaseSync {
   mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path, { timeout: 5000 });
