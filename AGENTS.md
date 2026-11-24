@@ -14,3 +14,9 @@
 - Use semantic commit messages following Conventional Commits: `<type>(<optional-scope>): <description>`, for example `feat(scanner): support nested archives` or `docs: define agent workflow`.
 - Choose the type that describes the change, such as `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, or `chore`. Mark breaking changes with `!` and explain them in the commit body.
 - Review the diff and stage only files belonging to that meaningful change. Preserve unrelated user changes and never commit secrets or generated artifacts unless they are intentionally tracked.
+
+## Review, merge, and cleanup
+
+- Before merging a branch, use the user's [`@review` skill from Artilities](https://github.com/AngelaDMerkel/artilities/blob/main/.agents/skills/review/SKILL.md). Read and follow the current skill, including its independent review and publication requirements.
+- Merge only the reviewed revision after its checks, findings, and required approvals are satisfied. Preserve semantic commits; follow the skill's merge method.
+- After verifying the merge, remove the task's merged branches and dedicated worktrees. Preserve unrelated work and never discard unmerged commits or uncommitted changes during cleanup.
