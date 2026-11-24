@@ -93,7 +93,7 @@ export function nextRun(db:DatabaseSync):Run|undefined {
 export function totals(db:DatabaseSync,library:string) {
   const counts=db.prepare("SELECT count(*) AS archives,coalesce(sum(size),0) AS currentBytes,coalesce(sum(CASE WHEN converted_pages>0 THEN 1 ELSE 0 END),0) AS optimizedArchives,coalesce(sum(converted_pages),0) AS optimizedPages,sum(CASE WHEN format_counts IS NULL THEN 1 ELSE 0 END) AS unknownFormats FROM archives WHERE library_id=? AND location<>'quarantine' AND status<>'missing'").get(library)!;
   const saved=Number(db.prepare("SELECT coalesce(sum(r.bytes_saved),0) AS saved FROM results r JOIN runs j ON j.id=r.run_id WHERE j.library_id=? AND j.source<>'import' AND r.outcome='optimized'").get(library)!['saved']);
-  const needs=Number(db.prepare("SELECT count(*) AS n FROM issues i JOIN archives a ON a.id=i.archive_id WHERE a.library_id=? AND i.state='needs_review'").get(library)!['n']);
+  const needs=Number(db.prepare("SELECT count(*) AS n FROM issues i LEFT JOIN archives a ON a.id=i.archive_id WHERE (a.library_id=? OR i.archive_id IS NULL) AND i.state='needs_review'").get(library)!['n']);
   return {archives:Number(counts['archives']),currentBytes:Number(counts['currentBytes']),optimizedArchives:Number(counts['optimizedArchives']),
     optimizedPages:Number(counts['optimizedPages']),unknownFormats:Number(counts['unknownFormats']??0),
     savedBytes:setting<number>(db,'imported_savings:'+library,0)+saved,needsAttention:needs};
