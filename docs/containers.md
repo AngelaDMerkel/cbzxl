@@ -37,6 +37,8 @@ docker compose stop cbzxl
 Stopping cancels encoder work and finishes any publication already in progress.
 After an abrupt stop, durable transfers are reconciled before a new run.
 Interrupted runs remain history; explicitly queued new runs continue on startup.
+If a database write fails, the worker stops retrying and exposes the error while
+leaving the queue intact. Restore writable storage and restart to resume it.
 
 The root filesystem is read-only. The process has no Linux capabilities and
 cannot acquire new privileges. Compose limits CPU, memory, and process count;

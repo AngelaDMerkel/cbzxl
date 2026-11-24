@@ -95,14 +95,17 @@ export class Worker {
   }
   wake(): void {
     if (this.task || this.closing) return;
+    let failed = false;
     this.task = this.drain()
       .catch((error) => {
+        failed = true;
         this.error = error instanceof Error ? error.message : String(error);
         console.error(this.error);
       })
       .finally(() => {
         this.task = null;
         if (
+          !failed &&
           !this.closing &&
           this.db
             .prepare("SELECT 1 FROM runs WHERE status='queued' LIMIT 1")

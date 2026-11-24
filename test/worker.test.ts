@@ -250,6 +250,45 @@ test("ordinary ZIP directory records survive a successful conversion", async () 
   }
 });
 
+test("a persistent queue claim failure yields and can resume after recovery", async () => {
+  const f = await fixture();
+  try {
+    const program =
+      "import assert from 'node:assert/strict';" +
+      "import {openDatabase} from " +
+      JSON.stringify(new URL("../src/database.ts", import.meta.url).href) +
+      ";" +
+      "import {Worker} from " +
+      JSON.stringify(new URL("../src/worker.ts", import.meta.url).href) +
+      ";" +
+      "import {activeLibrary,enqueue} from " +
+      JSON.stringify(new URL("../src/library.ts", import.meta.url).href) +
+      ";" +
+      "const config=" +
+      JSON.stringify({
+        ...f.config,
+        database: join(f.dir, "claim-failure.sqlite3"),
+      }) +
+      ";" +
+      "const db=openDatabase(config.database),library=activeLibrary(db,config.source),worker=new Worker(db,config,{encoder:'unused',decoder:'unused',imagemagick:'unused'});" +
+      "await worker.initialize();const id=enqueue(db,library,{mode:'lossless',effort:1,distance:0},'all');" +
+      "db.exec(\"CREATE TRIGGER fail_claim BEFORE UPDATE OF status ON runs WHEN NEW.status='running' BEGIN SELECT RAISE(ABORT,'synthetic claim failure'); END\");" +
+      "console.error=()=>{};setTimeout(async()=>{try{" +
+      "assert.match(worker.error,/synthetic claim failure/);assert.equal(db.prepare('SELECT status FROM runs WHERE id=?').get(id).status,'queued');" +
+      "db.exec('DROP TRIGGER fail_claim');worker.wake();await worker.idle();assert.equal(db.prepare('SELECT status FROM runs WHERE id=?').get(id).status,'succeeded');" +
+      "await worker.close();db.close();process.stdout.write('responsive and resumed');" +
+      "}catch(error){process.stderr.write(String(error));process.exitCode=1;}},25);worker.wake();";
+    const output = execFileSync(
+      process.execPath,
+      ["--input-type=module", "-e", program],
+      { encoding: "utf8", timeout: 5000, maxBuffer: 65536 },
+    );
+    assert.equal(output, "responsive and resumed");
+  } finally {
+    await f.close();
+  }
+});
+
 test("in-place conversion is verified, counted once, and preserves page history", async () => {
   const f = await fixture();
   try {
